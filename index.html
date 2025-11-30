@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MetaPAES Revolution</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Chart.js for Pro Stats -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'], 
+                        display: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: { DEFAULT: '#4CC900', dark: '#3DA300', light: '#6BE81E' }, 
+                        secondary: { DEFAULT: '#CE82FF', dark: '#A560D1' },
+                        accent: { DEFAULT: '#FFC800', dark: '#E5B400' },
+                        danger: { DEFAULT: '#FF4B4B', dark: '#D32F2F' },
+                        info: { DEFAULT: '#1CB0F6', dark: '#1899D6' },
+                        surface: '#F7F7F7',
+                        zen: { DEFAULT: '#81C784', dark: '#388E3C', light: '#C8E6C9' }
+                    },
+                    boxShadow: {
+                        'b-4': '0 4px 0 0 rgba(0,0,0,0.15)',
+                        'card': '0 4px 20px rgba(0,0,0,0.05)',
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'breathe': 'breathe 8s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(4px, 0, 0)' } },
+                        pop: { '0%': { transform: 'scale(0)' }, '100%': { transform: 'scale(1)' } },
+                        breathe: {
+                            '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
+                            '50%': { transform: 'scale(1.5)', opacity: '0.4' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; overflow: hidden; height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center; }
+        
+        .screen { 
+            transition: opacity 0.3s ease, transform 0.3s ease; 
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            overflow: hidden; 
+            background: #F9FAFB; 
+            display: flex; flex-direction: column; 
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .screen.active { 
+            z-index: 10; 
+            opacity: 1 !important; 
+            pointer-events: auto; 
+            display: flex !important;
+        }
+
+        .btn-3d { transition: all 0.1s; transform: translateY(0); box-shadow: 0 4px 0 0 currentColor; }
+        .btn-3d:active { transform: translateY(4px); box-shadow: 0 0 0 0 currentColor; }
+        .btn-3d:disabled { opacity: 0.5; transform: translateY(4px); box-shadow: none; cursor: not-allowed; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        .path-node:active { transform: scale(0.95); }
+        .zen-circle { box-shadow: 0 0 60px 20px rgba(129, 199, 132, 0.4); }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #4CC900; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #E5E7EB; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- App Container -->
+    <div class="w-full h-full sm:max-w-[420px] sm:h-[850px] sm:rounded-[40px] bg-white relative shadow-2xl overflow-hidden border-8 border-gray-900 ring-4 ring-gray-800">
+        
+        <!-- ==================== SCREENS ==================== -->
+
+        <!-- 1. ONBOARDING (Active by default) -->
+        <div id="screen-onboarding" class="screen active bg-white z-50 justify-center p-8">
+            <div class="mb-10 relative flex justify-center">
+                <div class="absolute -top-6 right-10 text-5xl animate-bounce">🎓</div>
+                <div class="w-48 h-48 bg-primary-light rounded-full flex items-center justify-center shadow-lg animate-float">
+                    <img src="https://img.icons8.com/3d-fluency/94/owl.png" alt="Mascot" class="w-32 h-32 drop-shadow-md">
+                </div>
+            </div>
+            <h1 class="font-display font-black text-4xl text-gray-800 mb-2 text-center tracking-tight">MetaPAES</h1>
+            <p class="text-gray-400 text-center text-xl font-bold mb-12">Tu futuro, gamificado.</p>
+            
+            <button onclick="navTo('setup')" class="btn-3d w-full bg-primary text-white font-black text-lg py-4 rounded-2xl border-b-4 border-primary-dark shadow-primary-dark mb-4 cursor-pointer">
+                INICIAR MI CAMINO PAES
+            </button>
+            <button onclick="navTo('login')" class="w-full bg-white text-primary font-black text-lg py-4 rounded-2xl border-2 border-gray-200 hover:bg-gray-50 uppercase tracking-widest cursor-pointer">
+                CONTINUAR MI PROGRESO
+            </button>
+        </div>
+
+        <!-- 2. SETUP WIZARD (Full 5 Steps) -->
+        <div id="screen-setup" class="screen bg-white z-50 flex flex-col">
+            <!-- Header -->
+            <div class="px-6 pt-6 pb-2">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="prevSetupStep()" class="text-gray-400 hover:text-gray-600 cursor-pointer"><i class="fas fa-arrow-left text-xl"></i></button>
+                    <div class="h-2 flex-grow bg-gray-100 rounded-full mx-4 overflow-hidden">
+                        <div id="setup-progress" class="h-full bg-primary rounded-full w-[20%] transition-all duration-500"></div>
+                    </div>
+                    <span class="text-xs font-bold text-gray-400" id="step-indicator">1/5</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Body -->
+            <div class="flex-grow p-6 overflow-y-auto relative" id="setup-body">
+                
+                <!-- STEP 1: NAME -->
+                <div id="setup-step-1" class="setup-step h-full flex flex-col justify-center animate-pop">
+                    <img src="https://img.icons8.com/3d-fluency/94/owl.png" class="w-20 mx-auto mb-4">
+                    <h2 class="font-display font-black text-3xl text-gray-800 mb-2 text-center">¡Hola! Soy Búho.</h2>
+                    <p class="text-gray-400 font-bold text-center mb-8">Seré tu entrenador personal. ¿Cómo te llamas?</p>
+                    <input type="text" id="setup-name" placeholder="Tu nombre..." class="w-full p-4 text-xl font-bold text-center border-b-4 border-gray-200 focus:border-primary outline-none bg-transparent transition-colors text-gray-700" onkeyup="checkNameInput(this)">
+                </div>
+
+                <!-- STEP 2: MODULE & GOAL -->
+                <div id="setup-step-2" class="setup-step hidden animate-pop">
+                    <h2 class="font-display font-black text-2xl text-gray-800 mb-2">Tu objetivo</h2>
+                    <p class="text-gray-400 font-bold mb-6">¿Qué prueba vas a rendir?</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <button onclick="selectSetupMod('M1')" id="btn-setup-m1" class="setup-mod-btn p-4 rounded-2xl border-2 border-primary bg-green-50 text-primary-dark ring-2 ring-primary ring-opacity-50 transition cursor-pointer">
+                            <i class="fas fa-calculator text-2xl mb-2"></i>
+                            <div class="font-black text-lg">M1</div>
+                            <div class="text-xs font-bold opacity-80">General</div>
+                        </button>
+                        <button onclick="selectSetupMod('M2')" id="btn-setup-m2" class="setup-mod-btn p-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition cursor-pointer">
+                            <i class="fas fa-microchip text-2xl mb-2"></i>
+                            <div class="font-black text-lg">M2</div>
+                            <div class="text-xs font-bold opacity-80">Avanzada</div>
+                        </button>
+                    </div>
+
+                    <p class="text-gray-400 font-bold mb-4">Meta de Puntaje:</p>
+                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-6 text-center shadow-sm">
+                        <div class="font-black text-5xl text-primary mb-2" id="goal-display">850</div>
+                        <input type="range" min="400" max="1000" value="850" step="10" class="w-full accent-primary" oninput="updateGoal(this.value)">
+                    </div>
+                </div>
+
+                <!-- STEP 3: CURRENT LEVEL -->
+                <div id="setup-step-3" class="setup-step hidden animate-pop">
+                    <h2 class="font-display font-black text-2xl text-gray-800 mb-2">Diagnóstico Rápido</h2>
+                    <p class="text-gray-400 font-bold mb-6">¿Cómo te sientes con las matemáticas hoy?</p>
+                    
+                    <div class="space-y-3">
+                        <button onclick="selectLevel(this)" class="level-btn w-full p-4 rounded-2xl border-2 border-gray-200 hover:border-primary hover:bg-green-50 transition flex items-center group cursor-pointer">
+                            <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4 group-hover:bg-primary group-hover:text-white transition text-xl">🌱</div>
+                            <div class="text-left">
+                                <h4 class="font-black text-gray-700 group-hover:text-primary-dark">Desde Cero</h4>
+                                <p class="text-xs text-gray-400 font-bold">Necesito repasar las bases.</p>
+                            </div>
+                        </button>
+                        <button onclick="selectLevel(this)" class="level-btn w-full p-4 rounded-2xl border-2 border-primary bg-green-50 transition flex items-center group cursor-pointer ring-2 ring-primary ring-opacity-20">
+                            <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-4 text-white text-xl">🚀</div>
+                            <div class="text-left">
+                                <h4 class="font-black text-primary-dark">Intermedio</h4>
+                                <p class="text-xs text-gray-500 font-bold">Me defiendo, quiero mejorar.</p>
+                            </div>
+                        </button>
+                        <button onclick="selectLevel(this)" class="level-btn w-full p-4 rounded-2xl border-2 border-gray-200 hover:border-primary hover:bg-green-50 transition flex items-center group cursor-pointer">
+                            <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4 group-hover:bg-primary group-hover:text-white transition text-xl">🦁</div>
+                            <div class="text-left">
+                                <h4 class="font-black text-gray-700 group-hover:text-primary-dark">Experto</h4>
+                                <p class="text-xs text-gray-400 font-bold">Voy por el nacional.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: TIME -->
+                <div id="setup-step-4" class="setup-step hidden animate-pop">
+                    <h2 class="font-display font-black text-2xl text-gray-800 mb-2">Tu Ritmo</h2>
+                    <p class="text-gray-400 font-bold mb-6">¿Cuánto tiempo puedes invertir al día?</p>
+                    <div class="space-y-3">
+                        <button onclick="selectTime(this)" class="time-btn w-full p-4 rounded-2xl border-2 border-gray-200 font-bold text-gray-500 hover:border-primary hover:bg-green-50 hover:text-primary transition text-left flex items-center cursor-pointer">
+                            <div class="w-6 h-6 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center"><div class="dot w-3 h-3 bg-primary rounded-full hidden"></div></div>
+                            <span class="flex-grow">15 min / día</span>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-400">Relax</span>
+                        </button>
+                        <button onclick="selectTime(this)" class="time-btn w-full p-4 rounded-2xl border-2 border-primary bg-green-50 text-primary font-bold transition text-left flex items-center cursor-pointer">
+                            <div class="w-6 h-6 rounded-full border-2 border-primary mr-3 flex items-center justify-center"><div class="dot w-3 h-3 bg-primary rounded-full"></div></div>
+                            <span class="flex-grow">30 min / día</span>
+                            <span class="text-xs bg-primary-light text-primary-dark px-2 py-1 rounded">Recomendado</span>
+                        </button>
+                        <button onclick="selectTime(this)" class="time-btn w-full p-4 rounded-2xl border-2 border-gray-200 font-bold text-gray-500 hover:border-primary hover:bg-green-50 hover:text-primary transition text-left flex items-center cursor-pointer">
+                            <div class="w-6 h-6 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center"><div class="dot w-3 h-3 bg-primary rounded-full hidden"></div></div>
+                            <span class="flex-grow">60 min / día</span>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-400">Intenso</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: MOTIVATION -->
+                <div id="setup-step-5" class="setup-step hidden animate-pop">
+                    <h2 class="font-display font-black text-2xl text-gray-800 mb-2">Última pregunta...</h2>
+                    <p class="text-gray-400 font-bold mb-6">¿Qué te motiva a lograr esto?</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="selectReason(this)" class="reason-btn p-4 rounded-2xl border-2 border-gray-200 hover:border-secondary hover:bg-purple-50 transition cursor-pointer text-center">
+                            <i class="fas fa-university text-3xl mb-2 text-gray-300 group-hover:text-secondary"></i>
+                            <div class="font-bold text-gray-600">Entrar a la U</div>
+                        </button>
+                        <button onclick="selectReason(this)" class="reason-btn p-4 rounded-2xl border-2 border-gray-200 hover:border-secondary hover:bg-purple-50 transition cursor-pointer text-center">
+                            <i class="fas fa-award text-3xl mb-2 text-gray-300"></i>
+                            <div class="font-bold text-gray-600">Ganar Beca</div>
+                        </button>
+                        <button onclick="selectReason(this)" class="reason-btn p-4 rounded-2xl border-2 border-gray-200 hover:border-secondary hover:bg-purple-50 transition cursor-pointer text-center">
+                            <i class="fas fa-chart-line text-3xl mb-2 text-gray-300"></i>
+                            <div class="font-bold text-gray-600">Superarme</div>
+                        </button>
+                         <button onclick="selectReason(this)" class="reason-btn p-4 rounded-2xl border-2 border-gray-200 hover:border-secondary hover:bg-purple-50 transition cursor-pointer text-center">
+                            <i class="fas fa-users text-3xl mb-2 text-gray-300"></i>
+                            <div class="font-bold text-gray-600">Orgullo Familiar</div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-gray-100 bg-white">
+                <button id="setup-next-btn" onclick="nextSetupStep()" class="btn-3d w-full bg-gray-200 text-gray-400 font-black text-lg py-4 rounded-2xl border-b-4 border-gray-300 cursor-not-allowed" disabled>
+                    CONTINUAR
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. NEW HOME DASHBOARD (Hybrid: Stats + Duolingo Path) -->
+        <div id="screen-home" class="screen bg-gray-50">
+            <!-- Sticky Top Bar -->
+            <div class="glass absolute top-0 w-full z-30 px-5 py-3 flex justify-between items-center border-b border-gray-200/50">
+                <div class="flex items-center space-x-2">
+                     <div class="w-10 h-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer shadow-sm hover:scale-105 transition" onclick="navTo('profile')">
+                        <img src="https://img.icons8.com/3d-fluency/94/owl.png" class="w-8">
+                    </div>
+                    <button onclick="toggleModule()" class="px-3 py-1 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center space-x-1 active:scale-95 transition hover:bg-gray-50">
+                         <div class="w-2 h-2 rounded-full bg-primary" id="mod-indicator-dot"></div>
+                         <span id="mod-label" class="font-black text-gray-700 text-xs">M1</span>
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <div class="flex items-center bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-sm">
+                        <img src="https://img.icons8.com/color/48/fire-element.png" class="w-5 h-5 mr-1">
+                        <span id="streak-display" class="font-black text-orange-500 text-sm">0</span>
+                    </div>
+                    <div class="flex items-center bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:bg-yellow-50 transition" onclick="navTo('shop')">
+                        <img src="https://img.icons8.com/color/48/gem.png" class="w-5 h-5 mr-1">
+                        <span id="coins-display" class="font-black text-accent-dark text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-grow overflow-y-auto hide-scrollbar pt-24 pb-28 px-5 space-y-6">
+                
+                <!-- A. Dashboard Header (Welcome & Quick Stats) -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between fade-in">
+                        <div>
+                            <h1 class="font-display font-black text-2xl text-gray-800 leading-tight">¡Hola, <span id="home-username" class="text-primary">Estudiante</span>!</h1>
+                            <p class="text-sm font-bold text-gray-400 flex items-center mt-1 bg-white px-2 py-1 rounded-lg shadow-sm inline-block">
+                                <i class="fas fa-sun text-yellow-400 mr-2"></i>
+                                <span id="emotional-msg">Hoy brillarás. ✨</span>
+                            </p>
+                        </div>
+                        <div class="relative w-16 h-16 animate-float cursor-pointer hover:scale-110 transition" onclick="showMascotMsg()">
+                             <div class="absolute -top-2 -left-4 bg-white px-2 py-1 rounded-lg shadow-sm border border-gray-100 text-[10px] font-bold text-primary transform -rotate-12 whitespace-nowrap">¡Vamos!</div>
+                             <img src="https://img.icons8.com/3d-fluency/94/owl.png" class="w-full h-full drop-shadow-md">
+                        </div>
+                    </div>
+
+                    <!-- Quick Action Buttons -->
+                    <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2">
+                        <button class="min-w-[100px] bg-white p-3 rounded-2xl border-2 border-gray-100 shadow-sm flex flex-col items-center active:scale-95 transition hover:border-orange-200 group cursor-pointer" onclick="startQuiz('mixed')">
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-500 mb-2 text-xl group-hover:scale-110 transition"><i class="fas fa-bolt"></i></div>
+                            <span class="text-xs font-black text-gray-600">Flash 5'</span>
+                        </button>
+                        <button class="min-w-[100px] bg-white p-3 rounded-2xl border-2 border-gray-100 shadow-sm flex flex-col items-center active:scale-95 transition hover:border-green-200 group cursor-pointer" onclick="navTo('profile'); switchProfileTab('zen')">
+                            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-500 mb-2 text-xl group-hover:scale-110 transition"><i class="fas fa-leaf"></i></div>
+                            <span class="text-xs font-black text-gray-600">Modo Zen</span>
+                        </button>
+                        <button class="min-w-[100px] bg-white p-3 rounded-2xl border-2 border-gray-100 shadow-sm flex flex-col items-center active:scale-95 transition hover:border-blue-200 group cursor-pointer" onclick="navTo('profile'); switchProfileTab('stats')">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-500 mb-2 text-xl group-hover:scale-110 transition"><i class="fas fa-chart-pie"></i></div>
+                            <span class="text-xs font-black text-gray-600">Stats IA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- B. THE PATH (Main Duolingo-style Content) -->
+                <div class="relative pb-10">
+                    <!-- Section Header -->
+                    <div class="bg-primary text-white p-4 rounded-xl mb-8 shadow-b-4 shadow-primary-dark flex justify-between items-center sticky top-0 z-20" id="path-header">
+                        <div>
+                            <h2 class="font-black text-lg" id="unit-title">Ruta M1</h2>
+                            <p class="text-sm font-bold opacity-90" id="unit-subtitle">Competencia Matemática 1</p>
+                        </div>
+                        <i class="fas fa-map-marked-alt text-2xl opacity-50"></i>
+                    </div>
+
+                    <!-- The Path Nodes (Injected via JS) -->
+                    <!-- Increased space-y to 10 for better separation as requested -->
+                    <div id="units-container" class="flex flex-col items-center w-full space-y-10">
+                        <!-- Nodes will be rendered here by renderPath() -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. LOGIN SCREEN -->
+        <div id="screen-login" class="screen bg-white z-50 p-8 flex flex-col justify-center">
+             <button onclick="navTo('onboarding')" class="absolute top-8 left-8 text-gray-400 hover:text-gray-600 cursor-pointer"><i class="fas fa-arrow-left text-xl"></i></button>
+             <div class="mb-8 text-center">
+                <img src="https://img.icons8.com/3d-fluency/94/owl.png" class="w-24 h-24 mx-auto mb-4">
+                <h2 class="font-display font-black text-2xl text-gray-800">¡Hola de nuevo!</h2>
+                <p class="text-gray-400 font-bold">Ingresa para recuperar tu racha.</p>
+             </div>
+             <div class="space-y-4 mb-8">
+                <div><label class="block text-gray-500 font-bold text-xs uppercase tracking-wider mb-2">Email</label><input type="email" placeholder="estudiante@metapaes.cl" class="w-full p-4 rounded-2xl bg-gray-100 border-2 border-transparent focus:border-primary focus:bg-white outline-none font-bold text-gray-700 transition"></div>
+                 <div><label class="block text-gray-500 font-bold text-xs uppercase tracking-wider mb-2">Contraseña</label><input type="password" placeholder="••••••••" class="w-full p-4 rounded-2xl bg-gray-100 border-2 border-transparent focus:border-primary focus:bg-white outline-none font-bold text-gray-700 transition"></div>
+             </div>
+             <button onclick="navTo('home')" class="btn-3d w-full bg-primary text-white font-black text-lg py-4 rounded-2xl border-b-4 border-primary-dark shadow-primary-dark mb-4 cursor-pointer">INGRESAR</button>
+        </div>
+
+        <!-- 5. PROFILE HUB -->
+        <div id="screen-profile" class="screen bg-gray-50">
+            <div class="bg-white pb-6 pt-8 px-6 rounded-b-[40px] shadow-sm z-20">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center"><div class="w-20 h-20 rounded-full bg-blue-100 border-4 border-white shadow-md flex items-center justify-center overflow-hidden mr-4"><img src="https://img.icons8.com/3d-fluency/94/owl.png" class="w-16"></div><div><h2 class="font-display font-black text-xl text-gray-800" id="profile-name-display">Estudiante Pro</h2><p class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-lg inline-block">Nivel 12</p></div></div>
+                    <button class="text-gray-400 hover:text-gray-600"><i class="fas fa-cog text-xl"></i></button>
+                </div>
+                <div class="flex bg-gray-100 p-1 rounded-xl"><button onclick="switchProfileTab('stats')" id="tab-stats" class="flex-1 py-2 rounded-lg text-sm font-black text-gray-700 bg-white shadow-sm transition">Progreso</button><button onclick="switchProfileTab('zen')" id="tab-zen" class="flex-1 py-2 rounded-lg text-sm font-bold text-gray-400 hover:text-gray-600 transition">Zona Zen</button></div>
+            </div>
+            <div class="flex-grow overflow-y-auto pb-24 relative">
+                <div id="view-stats" class="p-6 space-y-6 fade-in">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden"><div class="absolute right-0 top-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-10 -translate-y-10"></div><p class="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">Predicción PAES</p><h3 class="font-display font-black text-5xl mb-2"><span id="predicted-score">720</span> <span class="text-xl font-medium">pts</span></h3><div class="w-full bg-blue-800/50 rounded-full h-1.5 mb-2"><div class="bg-white h-1.5 rounded-full" style="width: 75%"></div></div></div>
+                    <div class="bg-white rounded-3xl p-4 shadow-sm border border-gray-100"><h3 class="font-black text-gray-700 mb-4">Radar de Competencias</h3><div class="relative h-64 w-full"><canvas id="competenceChart"></canvas></div></div>
+                </div>
+                <div id="view-zen" class="hidden p-6 h-full flex flex-col items-center justify-center text-center fade-in">
+                    <div class="mb-8 relative"><div class="w-64 h-64 bg-zen-light rounded-full absolute top-0 left-0 animate-breathe blur-xl opacity-50"></div><div class="w-64 h-64 bg-zen/20 rounded-full flex items-center justify-center relative z-10 border-4 border-white shadow-xl zen-circle transition-all duration-[4000ms] ease-in-out" id="zen-visual"><i class="fas fa-lungs text-6xl text-zen-dark opacity-50"></i></div></div>
+                    <h2 class="font-display font-black text-3xl text-gray-700 mb-2" id="zen-text">Inhala...</h2><button onclick="toggleBreathing()" id="zen-btn" class="btn-3d px-8 py-4 bg-zen text-white font-black rounded-2xl border-b-4 border-zen-dark shadow-lg w-full max-w-xs">INICIAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SHOP, RANKING, QUIZ, OVERLAYS (Kept intact) -->
+        <div id="screen-shop" class="screen bg-white">
+            <div class="p-4 border-b border-gray-200 flex items-center sticky top-0 z-10 bg-white">
+                <button onclick="navTo('home')" class="mr-4 text-gray-400"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h2 class="font-display font-black text-xl text-gray-700">Tienda</h2>
+                <div class="ml-auto font-black text-accent flex items-center">
+                    <img src="https://img.icons8.com/color/48/gem.png" class="w-6 h-6 mr-1"><span id="shop-coins">0</span>
+                </div>
+            </div>
+            <div class="flex-grow overflow-y-auto p-4 pb-24">
+                <div class="flex items-center p-4 bg-white border-2 border-gray-100 rounded-2xl mb-3 shadow-sm">
+                    <img src="https://img.icons8.com/color/48/pixel-heart.png" class="w-12 h-12 mr-4">
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Rellenar Vidas</h4>
+                        <p class="text-xs text-gray-400">Recupera 5 corazones</p>
+                    </div>
+                    <button onclick="buyItem('hearts', 100)" class="btn-3d bg-white border-2 border-gray-200 text-accent-dark font-black px-4 py-2 rounded-xl text-sm shadow-sm flex items-center">
+                        <img src="https://img.icons8.com/color/48/gem.png" class="w-4 h-4 mr-1"> 100
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="screen-ranking" class="screen bg-white"><div class="p-6 pt-10 text-center border-b border-gray-100 sticky top-0 z-10 bg-white"><h2 class="font-display font-black text-2xl text-purple-600">Liga Amatista</h2></div><div class="flex-grow overflow-y-auto p-4 space-y-2 pb-24" id="leaderboard-list"></div></div>
+        <div id="screen-quiz" class="screen bg-white z-40"><div class="px-4 py-6 flex items-center justify-between"><button onclick="exitQuiz()" class="text-gray-400"><i class="fas fa-times text-2xl"></i></button><div class="flex-grow mx-4 h-4 bg-gray-200 rounded-full overflow-hidden"><div id="quiz-progress-bar" class="h-full bg-primary transition-all duration-500 w-0"></div></div><div class="text-danger font-black flex items-center"><i class="fas fa-heart mr-1"></i><span id="quiz-hearts">5</span></div></div><div class="flex-grow flex flex-col items-center justify-center p-6 text-center overflow-y-auto"><div id="quiz-content" class="w-full max-w-md animate-pop"><h2 class="font-display font-black text-2xl text-gray-700 mb-8 leading-snug" id="q-text"></h2><div id="q-options" class="grid grid-cols-1 gap-3 w-full"></div></div></div><div id="feedback-sheet" class="absolute bottom-0 w-full transform translate-y-full transition-transform duration-300 z-50 border-t-2 bg-white"><div class="p-6 flex flex-col sm:flex-row items-center justify-between max-w-md mx-auto"><div class="mb-4 sm:mb-0 flex items-center w-full"><div id="fb-icon-container" class="w-14 h-14 rounded-full bg-white flex items-center justify-center mr-4 shadow-sm text-3xl"></div><div class="text-left"><h3 id="fb-title" class="font-black text-xl"></h3><p id="fb-msg" class="text-sm font-bold opacity-90 hidden sm:block"></p></div></div><button id="fb-btn" onclick="nextQuestion()" class="btn-3d w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-white shadow-lg bg-primary border-b-4 border-primary-dark">CONTINUAR</button></div></div><div id="check-area" class="p-4 border-t border-gray-100 bg-white"><button id="btn-check" onclick="checkAnswer()" class="btn-3d w-full bg-gray-200 text-gray-400 font-black uppercase py-4 rounded-2xl border-b-4 border-gray-300" disabled>COMPROBAR</button></div></div>
+        <div id="overlay-win" class="absolute inset-0 z-[60] bg-black/50 hidden flex items-end sm:items-center justify-center"><div class="bg-white w-full sm:w-[350px] sm:rounded-3xl rounded-t-3xl p-8 text-center animate-pop"><img src="https://img.icons8.com/3d-fluency/94/trophy.png" class="w-24 mx-auto mb-4"><h2 class="font-display font-black text-2xl text-yellow-500 mb-2">¡Lección Completada!</h2><button onclick="closeWinOverlay()" class="btn-3d w-full bg-primary text-white font-black py-4 rounded-2xl border-b-4 border-primary-dark shadow-primary-dark mt-6">CONTINUAR</button></div></div>
+        <div id="overlay-lose" class="absolute inset-0 z-[60] bg-black/50 hidden flex items-end sm:items-center justify-center"><div class="bg-white w-full sm:w-[350px] sm:rounded-3xl rounded-t-3xl p-8 text-center animate-pop"><img src="https://img.icons8.com/3d-fluency/94/pixel-heart.png" class="w-24 mx-auto mb-4 grayscale opacity-50"><h2 class="font-display font-black text-2xl text-gray-700 mb-2">¡Sin Vidas!</h2><button onclick="navTo('shop'); document.getElementById('overlay-lose').classList.add('hidden')" class="btn-3d w-full bg-accent text-white font-black py-4 rounded-2xl border-b-4 border-accent-dark shadow-accent-dark mb-3">TIENDA</button><button onclick="navTo('home'); document.getElementById('overlay-lose').classList.add('hidden')" class="w-full text-gray-400 font-bold py-2 uppercase">Salir</button></div></div>
+        
+        <!-- AI LOADING -->
+        <div id="screen-loading" class="screen bg-gray-900 z-[60] flex flex-col items-center justify-center text-white hidden"><div class="w-32 h-32 relative mb-8"><div class="absolute inset-0 border-4 border-gray-700 rounded-full"></div><div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div><div class="absolute inset-4 bg-gray-800 rounded-full flex items-center justify-center"><i class="fas fa-brain text-4xl text-primary animate-pulse"></i></div></div><h2 class="font-display font-black text-2xl mb-2">Analizando Perfil...</h2><p class="text-gray-400 font-bold text-sm mb-8" id="loading-text">Calibrando...</p><div class="w-64 h-2 bg-gray-800 rounded-full overflow-hidden"><div id="loading-bar" class="h-full bg-primary w-0 transition-all duration-[3000ms] ease-out"></div></div></div>
+
+        <!-- NAV BAR -->
+        <div id="bottom-nav" class="absolute bottom-0 w-full bg-white border-t-2 border-gray-100 flex justify-around items-end pb-6 pt-3 z-30 hidden">
+            <button onclick="navTo('home')" class="nav-btn group w-16 cursor-pointer" data-target="home"><div class="flex flex-col items-center group-active:scale-90 transition"><img src="https://img.icons8.com/color/48/home--v1.png" class="w-8 opacity-40 group-[.active]:opacity-100 group-[.active]:scale-110 transition"></div></button>
+            <button onclick="navTo('ranking')" class="nav-btn group w-16 cursor-pointer" data-target="ranking"><div class="flex flex-col items-center group-active:scale-90 transition"><img src="https://img.icons8.com/color/48/leaderboard.png" class="w-8 opacity-40 group-[.active]:opacity-100 group-[.active]:scale-110 transition"></div></button>
+            <button onclick="navTo('shop')" class="nav-btn group w-16 cursor-pointer" data-target="shop"><div class="flex flex-col items-center group-active:scale-90 transition"><img src="https://img.icons8.com/color/48/shop.png" class="w-8 opacity-40 group-[.active]:opacity-100 group-[.active]:scale-110 transition"></div></button>
+            <button onclick="navTo('profile')" class="nav-btn group w-16 cursor-pointer" data-target="profile"><div class="flex flex-col items-center group-active:scale-90 transition"><img src="https://img.icons8.com/color/48/learning.png" class="w-8 opacity-40 group-[.active]:opacity-100 group-[.active]:scale-110 transition"></div></button>
+        </div>
+
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        // === CONFIG & STATE ===
+        const CONFIG = { M1: { color: '#4CC900', border: '#3DA300', label: 'M1' }, M2: { color: '#CE82FF', border: '#A560D1', label: 'M2' } };
+        // !!! FIX: Ensure state is declared before anything tries to access it !!!
+        let state = { 
+            name: "Estudiante", 
+            mod: 'M1', 
+            xp: 1450, 
+            coins: 340, 
+            streak: 12, 
+            hearts: 5, 
+            maxHearts: 5, 
+            qIndex: 0, 
+            selected: null, 
+            goal: 850, 
+            setupStep: 1, 
+            stats: { 'Números': 0.85, 'Álgebra': 0.45, 'Geometría': 0.20, 'Datos': 0.65 }, 
+            currentQuizSet: [] 
+        };
+        
+        // M1 Nodes (Full Curriculum)
+        const NODES_M1 = [
+            { id: 'm1_num_1', type: 'start', title: 'Números Enteros', stars: 3, locked: false },
+            { id: 'm1_num_2', type: 'lesson', title: 'Racionales', stars: 2, locked: false },
+            { id: 'm1_num_3', type: 'lesson', title: 'Porcentajes', stars: 1, locked: false },
+            { id: 'm1_alg_1', type: 'lesson', title: 'Expresiones Alg.', stars: 0, locked: false },
+            { id: 'm1_alg_2', type: 'lesson', title: 'Ecuaciones 1°', stars: 0, locked: false },
+            { id: 'm1_alg_3', type: 'lesson', title: 'Sistemas 2x2', stars: 0, locked: false },
+            { id: 'm1_fun_1', type: 'chest', title: 'Concepto Función', stars: 0, locked: true },
+            { id: 'm1_fun_2', type: 'lesson', title: 'Función Lineal', stars: 0, locked: true },
+            { id: 'm1_geo_1', type: 'lesson', title: 'Perímetros y Áreas', stars: 0, locked: true },
+            { id: 'm1_geo_2', type: 'lesson', title: 'Pitágoras', stars: 0, locked: true },
+            { id: 'm1_geo_3', type: 'lesson', title: 'Cuerpos 3D', stars: 0, locked: true },
+            { id: 'm1_dat_1', type: 'lesson', title: 'Tablas y Gráficos', stars: 0, locked: true },
+            { id: 'm1_dat_2', type: 'lesson', title: 'Estadística', stars: 0, locked: true },
+            { id: 'm1_dat_3', type: 'lesson', title: 'Probabilidades', stars: 0, locked: true },
+            { id: 'm1_final', type: 'trophy', title: 'Ensayo M1', stars: 0, locked: true },
+        ];
+
+        // M2 Nodes (Advanced Curriculum)
+        const NODES_M2 = [
+            { id: 'm2_num_1', type: 'start', title: 'Logaritmos', stars: 3, locked: false },
+            { id: 'm2_num_2', type: 'lesson', title: 'Raíces y Potencias', stars: 2, locked: false },
+            { id: 'm2_alg_1', type: 'lesson', title: 'Ec. Cuadrática', stars: 1, locked: false },
+            { id: 'm2_fun_1', type: 'lesson', title: 'Función Cuadrática', stars: 0, locked: false },
+            { id: 'm2_fun_2', type: 'lesson', title: 'Función Inversa', stars: 0, locked: false },
+            { id: 'm2_alg_2', type: 'lesson', title: 'Inecuaciones', stars: 0, locked: false },
+            { id: 'm2_geo_1', type: 'chest', title: 'Homotecia', stars: 0, locked: true },
+            { id: 'm2_geo_2', type: 'lesson', title: 'Semejanza', stars: 0, locked: true },
+            { id: 'm2_geo_3', type: 'lesson', title: 'Vectores R3', stars: 0, locked: true },
+            { id: 'm2_geo_4', type: 'lesson', title: 'Geometría Analítica', stars: 0, locked: true },
+            { id: 'm2_dat_1', type: 'lesson', title: 'Dispersión', stars: 0, locked: true },
+            { id: 'm2_dat_2', type: 'lesson', title: 'Combinatoria', stars: 0, locked: true },
+            { id: 'm2_dat_3', type: 'lesson', title: 'Prob. Condicional', stars: 0, locked: true },
+            { id: 'm2_final', type: 'trophy', title: 'Ensayo M2', stars: 0, locked: true },
+        ];
+
+        // QUESTIONS DATABASE (M1 & M2) - EXPANDED & UNIQUE (MASSIVE UPDATE)
+        const QUESTIONS_DB = {
+            // --- M1 QUESTIONS (Competencia Matemática 1) ---
+            
+            'm1_num_1': [ // Números Enteros
+                { text: "Si al quíntuplo de -10 se le resta el triple de -1, ¿qué número resulta?", opts: ["-53", "-47", "-50", "47"], correct: 1, exp: "5(-10) - 3(-1) = -50 - (-3) = -50 + 3 = -47." },
+                { text: "Un buzo está a -15m y desciende 7m más. ¿Posición final?", opts: ["-8m", "-22m", "8m", "22m"], correct: 1, exp: "-15 - 7 = -22m." },
+                { text: "Resuelve: -4 • (5 - 8) + 20 ÷ -5", opts: ["8", "16", "12", "-4"], correct: 0, exp: "-4(-3) + (-4) = 12 - 4 = 8." },
+                { text: "La temperatura mínima fue -3°C y la máxima 12°C. ¿Variación?", opts: ["9°C", "15°C", "-15°C", "12°C"], correct: 1, exp: "12 - (-3) = 15°C." },
+                { text: "Si n es un número par negativo, ¿cuál expresión es siempre positiva?", opts: ["2n", "n + 2", "n² - 1", "n³"], correct: 2, exp: "Un negativo al cuadrado es positivo. Si |n| >= 2, n²-1 > 0." },
+                { text: "¿Cuál es el inverso aditivo de -(-5)?", opts: ["5", "-5", "0", "1/5"], correct: 1, exp: "-(-5) es 5. Su inverso aditivo es -5." },
+                { text: "Si a = -2 y b = -3, calcula |a - b|", opts: ["1", "-1", "5", "-5"], correct: 0, exp: "|-2 - (-3)| = |-2 + 3| = |1| = 1." }
+            ],
+            
+            'm1_num_2': [ // Racionales
+                { text: "¿Cuál es el valor de 3/4 + 1/2?", opts: ["5/4", "4/6", "1", "3/8"], correct: 0, exp: "3/4 + 2/4 = 5/4." },
+                { text: "0,25 expresado como fracción irreducible es:", opts: ["25/100", "1/4", "1/5", "2/5"], correct: 1, exp: "25/100 simplificado por 25 es 1/4." },
+                { text: "Ordena de menor a mayor: 1/2, 0.6, 2/5", opts: ["2/5 < 1/2 < 0.6", "1/2 < 0.6 < 2/5", "0.6 < 1/2 < 2/5", "2/5 < 0.6 < 1/2"], correct: 0, exp: "0.4 < 0.5 < 0.6." },
+                { text: "¿Cuánto es la mitad de la tercera parte de 120?", opts: ["40", "60", "20", "30"], correct: 2, exp: "1/3 de 120 es 40. Mitad de 40 es 20." },
+                { text: "Si una torta se divide en 8 y comes 3 trozos, ¿qué fracción queda?", opts: ["3/8", "5/8", "1/2", "1/4"], correct: 1, exp: "8/8 - 3/8 = 5/8." },
+                { text: "Calcula: (2/3) • (9/4)", opts: ["3/2", "2/3", "18/7", "11/7"], correct: 0, exp: "Simplifica: (2/4)•(9/3) = (1/2)•3 = 3/2." }
+            ],
+            
+            'm1_num_3': [ // Porcentajes
+                { text: "Un hotel tiene 200 habitaciones. Reservaron 140. ¿Qué % está disponible?", opts: ["30%", "40%", "70%", "60%"], correct: 0, exp: "Disponibles: 200 - 140 = 60.<br>Porcentaje: (60/200)*100% = 30%." },
+                { text: "El precio de $20.000 sube 10%. ¿Nuevo precio?", opts: ["$21.000", "$22.000", "$25.000", "$20.200"], correct: 1, exp: "10% de 20.000 = 2.000.<br>20.000 + 2.000 = $22.000." },
+                { text: "¿De qué número es 45 el 15%?", opts: ["300", "450", "30", "675"], correct: 0, exp: "45 = 0.15 * x -> x = 45/0.15 = 300." },
+                { text: "Si un producto con 20% de descuento cuesta $8.000, ¿precio original?", opts: ["$10.000", "$9.600", "$12.000", "$6.400"], correct: 0, exp: "80% = 8000 -> 100% = 10.000." },
+                { text: "El 50% del 50% de 200 es:", opts: ["100", "50", "25", "10"], correct: 1, exp: "0.5 * 0.5 * 200 = 0.25 * 200 = 50." },
+                { text: "¿Qué porcentaje es 5 de 20?", opts: ["20%", "25%", "5%", "40%"], correct: 1, exp: "(5/20)*100 = 1/4 * 100 = 25%." }
+            ],
+            
+            'm1_alg_1': [ // Expresiones Alg.
+                { text: "Si a = 2 y b = -3, valor de 2a - b:", opts: ["1", "7", "-1", "4"], correct: 1, exp: "2(2) - (-3) = 4 + 3 = 7." },
+                { text: "Reduce: 2x + 3y - x + y", opts: ["x + 4y", "3x + 4y", "x + 2y", "3xy"], correct: 0, exp: "(2x - x) + (3y + y) = x + 4y." },
+                { text: "El cuadrado del sucesor de x se escribe:", opts: ["x² + 1", "(x+1)²", "x² + 1²", "2(x+1)"], correct: 1, exp: "Sucesor es (x+1), al cuadrado es (x+1)²." },
+                { text: "Si P = x² - 1, valor de P cuando x = -2", opts: ["-5", "3", "-3", "5"], correct: 1, exp: "(-2)² - 1 = 4 - 1 = 3." },
+                { text: "Traduce: 'La tercera parte de un número disminuido en 5'", opts: ["x/3 - 5", "x - 5/3", "(x-5)/3", "3x - 5"], correct: 0, exp: "Coma imaginaria importa, pero usualmente: x/3 - 5." },
+                { text: "Multiplica: 2x(x - 3)", opts: ["2x² - 3", "2x² - 6x", "2x - 6", "x² - 3x"], correct: 1, exp: "Distributiva: 2x*x - 2x*3 = 2x² - 6x." }
+            ],
+            
+            'm1_alg_2': [ // Ecuaciones 1°
+                { text: "Resuelve: 3x + 5 = 20", opts: ["5", "15", "3", "4"], correct: 0, exp: "3x = 15 -> x = 5." },
+                { text: "La suma de tres pares consecutivos es 18. ¿El mayor?", opts: ["4", "6", "8", "10"], correct: 2, exp: "x + (x+2) + (x+4) = 18 -> 3x+6=18 -> 3x=12 -> x=4. Mayor: x+4 = 8." },
+                { text: "El triple de un número aumentado en 4 es 19. ¿Número?", opts: ["5", "6", "4", "7"], correct: 0, exp: "3x + 4 = 19 -> 3x = 15 -> x = 5." },
+                { text: "5(x - 2) = 10. Valor de x:", opts: ["2", "4", "0", "5"], correct: 1, exp: "x - 2 = 2 -> x = 4." },
+                { text: "x/2 + x/3 = 5. Valor de x:", opts: ["5", "6", "10", "30"], correct: 1, exp: "MCM 6 -> 3x + 2x = 30 -> 5x = 30 -> x = 6." },
+                { text: "Si 2x + 1 = x + 8, entonces x es:", opts: ["7", "9", "6", "1"], correct: 0, exp: "2x - x = 8 - 1 -> x = 7." }
+            ],
+            
+            'm1_alg_3': [ // Sistemas
+                { text: "x + y = 10, x - y = 2. ¿Valor de x?", opts: ["4", "5", "6", "8"], correct: 2, exp: "Sumando: 2x = 12 -> x = 6." },
+                { text: "Un kg de pan y uno de queso cuestan $5000. El queso cuesta $3000 más que el pan. ¿Pan?", opts: ["$1000", "$2000", "$4000", "$1500"], correct: 0, exp: "p + q = 5000; q = p + 3000 -> 2p + 3000 = 5000 -> 2p = 2000 -> p = 1000." },
+                { text: "Solución de: 2x + y = 5; x - y = 1", opts: ["(2,1)", "(1,2)", "(3,-1)", "(2,3)"], correct: 0, exp: "Sumar: 3x = 6 -> x=2. 2-y=1 -> y=1." },
+                { text: "En un corral hay gallinas y vacas. 10 cabezas y 28 patas. ¿Vacas?", opts: ["4", "6", "5", "8"], correct: 0, exp: "g+v=10; 2g+4v=28 -> g=6, v=4." },
+                { text: "Si x = 2y y x + y = 12, entonces y es:", opts: ["3", "4", "6", "2"], correct: 1, exp: "2y + y = 12 -> 3y = 12 -> y = 4." }
+            ],
+            
+            'm1_fun_1': [ // Concepto Función
+                { text: "¿Cuál relación NO es función?", opts: ["{(1,2), (2,3)}", "{(1,2), (1,3)}", "{(1,2), (3,2)}", "{(2,2)}"], correct: 1, exp: "En (1,2) y (1,3), el 1 tiene dos imágenes." },
+                { text: "Dominio de f(x) = 1/x", opts: ["Reales", "R - {0}", "R+", "Enteros"], correct: 1, exp: "x no puede ser 0." },
+                { text: "Si f(x) = 2x + 1, la preimagen de 7 es:", opts: ["15", "3", "4", "5"], correct: 1, exp: "2x + 1 = 7 -> 2x = 6 -> x = 3." },
+                { text: "¿Qué gráfico representa una función constante?", opts: ["Línea vertical", "Línea horizontal", "Parábola", "Círculo"], correct: 1, exp: "y = k, pendiente 0." },
+                { text: "f(x) = x². f(-3) es:", opts: ["-9", "9", "6", "-6"], correct: 1, exp: "(-3)² = 9." }
+            ],
+            
+            'm1_fun_2': [ // Lineal
+                { text: "Pendiente de y = -3x + 2", opts: ["2", "-3", "3", "1"], correct: 1, exp: "Coeficiente de x es -3." },
+                { text: "Juego: $120k base + $25k/h. Tienes $245k. ¿Horas extra?", opts: ["4", "5", "6", "3"], correct: 1, exp: "$125k extra / $25k = 5 horas." },
+                { text: "Función que pasa por el origen y (2,4)", opts: ["y = x", "y = 2x", "y = 0.5x", "y = x + 2"], correct: 1, exp: "m = 4/2 = 2. y = 2x." },
+                { text: "Coeficiente de posición de y = 5x - 7", opts: ["5", "7", "-7", "0"], correct: 2, exp: "Es el término libre (n)." },
+                { text: "¿Cuál recta es paralela a y = 2x + 1?", opts: ["y = -2x", "y = 2x + 5", "y = x + 2", "y = 0.5x"], correct: 1, exp: "Deben tener la misma pendiente (m=2)." }
+            ],
+            
+            'm1_geo_1': [ // Perímetros/Areas
+                { text: "Área de cuadrado de lado 5cm", opts: ["20", "25", "10", "15"], correct: 1, exp: "5² = 25." },
+                { text: "Perímetro de rectángulo 3x4", opts: ["7", "12", "14", "20"], correct: 2, exp: "2(3+4) = 14." },
+                { text: "Área de triángulo base 6, altura 4", opts: ["24", "12", "10", "48"], correct: 1, exp: "(6*4)/2 = 12." },
+                { text: "Si el perímetro de un cuadrado es 20, su área es:", opts: ["20", "25", "16", "100"], correct: 1, exp: "Lado = 20/4 = 5. Área = 5² = 25." },
+                { text: "Círculo de radio 3. Área aproximada (pi=3):", opts: ["9", "18", "27", "6"], correct: 2, exp: "pi*r² = 3 * 3² = 27." }
+            ],
+            
+            'm1_geo_2': [ // Pitágoras
+                { text: "Hipotenusa si catetos son 3 y 4", opts: ["5", "6", "7", "25"], correct: 0, exp: "√(3²+4²) = √25 = 5." },
+                { text: "Diagonal de cuadrado lado 1", opts: ["1", "√2", "2", "1.5"], correct: 1, exp: "d = a√2 = 1√2." },
+                { text: "Si hipotenusa es 10 y un cateto 6, el otro es:", opts: ["4", "8", "64", "16"], correct: 1, exp: "x² = 10² - 6² = 64 -> x=8." },
+                { text: "¿Es triángulo rectángulo uno de lados 5, 12, 13?", opts: ["Sí", "No", "Depende", "Falta info"], correct: 0, exp: "5² + 12² = 25 + 144 = 169 = 13². Trío Pitagórico." },
+                { text: "Altura de triángulo equilátero lado 2", opts: ["1", "√3", "2", "1.5"], correct: 1, exp: "h = (l√3)/2 = √3." }
+            ],
+            
+            'm1_geo_3': [ // Cuerpos 3D
+                { text: "Volumen cubo arista 2cm", opts: ["4", "6", "8", "12"], correct: 2, exp: "2³ = 8." },
+                { text: "Área total cubo arista 1cm", opts: ["1", "4", "6", "8"], correct: 2, exp: "6 caras x 1² = 6." },
+                { text: "Volumen paralelepípedo 2x3x4", opts: ["9", "24", "12", "18"], correct: 1, exp: "2 * 3 * 4 = 24." },
+                { text: "Si arista de cubo se duplica, su volumen:", opts: ["Se duplica", "Se cuadruplica", "Se octuplica", "Igual"], correct: 2, exp: "2³ = 8 veces mayor." }
+            ],
+            
+            'm1_dat_1': [ // Tablas
+                { text: "Frecuencia absoluta es:", opts: ["Conteo total", "% del total", "Suma acumulada", "Promedio"], correct: 0, exp: "Número de veces que se repite un dato." },
+                { text: "En un gráfico de barras, la altura indica:", opts: ["Frecuencia", "Variable", "Porcentaje", "Media"], correct: 0, exp: "Representa la cantidad de datos." },
+                { text: "Si frecuencia relativa es 0.2, el % es:", opts: ["2%", "20%", "0.2%", "200%"], correct: 1, exp: "0.2 * 100 = 20%." },
+                { text: "Marca de clase es:", opts: ["Dato mayor", "Promedio del intervalo", "Frecuencia", "Rango"], correct: 1, exp: "Punto medio del intervalo." }
+            ],
+            
+            'm1_dat_2': [ // Estadística
+                { text: "Promedio de: 2, 4, 6", opts: ["4", "6", "12", "3"], correct: 0, exp: "(2+4+6)/3 = 4." },
+                { text: "Mediana de: 1, 5, 2, 8, 3", opts: ["2", "3", "5", "8"], correct: 1, exp: "Ordenados: 1,2,3,5,8. Centro: 3." },
+                { text: "El rango de {2, 5, 1, 9} es:", opts: ["8", "7", "4", "9"], correct: 0, exp: "Max(9) - Min(1) = 8." },
+                { text: "Si todos los datos son 5, la desviación es:", opts: ["5", "0", "1", "25"], correct: 1, exp: "No hay variabilidad." },
+                { text: "Moda de {1, 2, 2, 3, 4}", opts: ["1", "2", "3", "2.4"], correct: 1, exp: "El dato que más se repite." }
+            ],
+            
+            'm1_dat_3': [ // Probabilidades
+                { text: "Lanzar dado: P(par)", opts: ["1/2", "1/3", "1/6", "2/3"], correct: 0, exp: "Pares: 2,4,6 (3 casos). 3/6 = 1/2." },
+                { text: "Sacar As de naipe inglés (52)", opts: ["1/13", "4/52", "1/52", "1/4"], correct: 0, exp: "4 Ases / 52 cartas = 1/13." },
+                { text: "Probabilidad de cara en moneda", opts: ["50%", "25%", "100%", "75%"], correct: 0, exp: "1 caso favorable / 2 totales." },
+                { text: "P(A) = 0.3. P(no A) es:", opts: ["0.3", "0.7", "0", "1"], correct: 1, exp: "1 - 0.3 = 0.7." },
+                { text: "Lanzar 2 monedas: P(2 sellos)", opts: ["1/2", "1/4", "1/3", "1/8"], correct: 1, exp: "Casos: CC, CS, SC, SS. Solo 1 favorable de 4." }
+            ],
+            
+            'm1_final': [ // Ensayo Final M1
+                { text: "Si x es par, ¿cuál es siempre impar?", opts: ["x+2", "2x", "x+1", "x-2"], correct: 2, exp: "Par + 1 = Impar." },
+                { text: "Un artículo vale $P. Se le recarga el 20% y luego se descuenta 20%. El precio final es:", opts: ["Igual a P", "Menor que P", "Mayor que P", "Depende de P"], correct: 1, exp: "Precio final = P * 1.2 * 0.8 = 0.96P. Es menor (96%)." },
+                { text: "Si 2x - 3 > 5, entonces:", opts: ["x > 4", "x > 1", "x < 4", "x = 4"], correct: 0, exp: "2x > 8 -> x > 4." },
+                { text: "¿Qué figura tiene infinitos ejes de simetría?", opts: ["Cuadrado", "Círculo", "Rectángulo", "Rombo"], correct: 1, exp: "El círculo." },
+                { text: "Si a/b = 2/3 y b/c = 3/5, a/c es:", opts: ["2/5", "5/2", "6/15", "1/3"], correct: 0, exp: "a/c = (a/b)*(b/c) = 2/3 * 3/5 = 2/5." },
+                { text: "Área de un cuadrado de diagonal d:", opts: ["d²", "d²/2", "2d²", "d"], correct: 1, exp: "A = d²/2." }
+            ],
+
+            // --- M2 QUESTIONS (Competencia Matemática 2) ---
+            
+            'm2_num_1': [ // Logaritmos
+                { text: "log₃(0,1 periódico) es:", opts: ["-1", "-2", "2", "1/2"], correct: 1, exp: "log₃(1/9) = -2." },
+                { text: "Si log₂x = 5, x es:", opts: ["25", "32", "10", "64"], correct: 1, exp: "2⁵ = 32." },
+                { text: "log(1000) vale:", opts: ["10", "3", "100", "1"], correct: 1, exp: "Base 10 implícita. 10³=1000." },
+                { text: "Propiedad: log(a•b) =", opts: ["log(a)•log(b)", "log(a)+log(b)", "log(a+b)", "b•log(a)"], correct: 1, exp: "Suma de logaritmos." },
+                { text: "log₂8 - log₂4 =", opts: ["1", "2", "3", "4"], correct: 0, exp: "3 - 2 = 1. O log₂(8/4) = log₂2 = 1." }
+            ],
+            
+            'm2_num_2': [ // Raíces y Potencias
+                { text: "Racionalizar 1/√2", opts: ["√2", "√2/2", "1/2", "2"], correct: 1, exp: "Multiplicar por √2/√2." },
+                { text: "Si P=√2, Q=√8, R=√18. P+Q+R=", opts: ["3√2", "5√2", "6√2", "12"], correct: 2, exp: "√2 + 2√2 + 3√2 = 6√2." },
+                { text: "(2³)⁴ es igual a:", opts: ["2⁷", "2¹²", "2⁻¹", "2¹"], correct: 1, exp: "Potencia de potencia se multiplican exponentes." },
+                { text: "√(-4) en los Reales es:", opts: ["-2", "2", "No existe", "+/- 2"], correct: 2, exp: "Raíz par de negativo no es real." },
+                { text: "4^(1/2) es:", opts: ["2", "4", "8", "16"], correct: 0, exp: "Raíz cuadrada de 4." }
+            ],
+            
+            'm2_alg_1': [ // Ec. Cuadrática
+                { text: "Discriminante de x² - 4x + 4 = 0", opts: ["0", "4", "16", "-4"], correct: 0, exp: "b²-4ac = 16-16=0." },
+                { text: "Soluciones de x² = 9", opts: ["3", "-3", "3 y -3", "81"], correct: 2, exp: "+/- 3." },
+                { text: "Si las raíces son 2 y -2, la ecuación es:", opts: ["x² + 4 = 0", "x² - 4 = 0", "x² - 2x = 0", "x² + 2 = 0"], correct: 1, exp: "(x-2)(x+2) = x² - 4." },
+                { text: "Suma de raíces de x² - 5x + 6 = 0", opts: ["5", "-5", "6", "-6"], correct: 0, exp: "-b/a = 5/1 = 5." },
+                { text: "Producto de raíces de 2x² + 3x + 8 = 0", opts: ["4", "8", "3", "1.5"], correct: 0, exp: "c/a = 8/2 = 4." }
+            ],
+            
+            'm2_fun_1': [ // Fun. Cuadrática
+                { text: "Vértice de y = (x-2)² + 1", opts: ["(2,1)", "(-2,1)", "(2,-1)", "(0,5)"], correct: 0, exp: "Forma canónica (h,k) -> (2,1)." },
+                { text: "Eje simetría de y = x² - 6x", opts: ["x=3", "x=-3", "x=6", "x=0"], correct: 0, exp: "-b/2a = 6/2 = 3." },
+                { text: "Concavidad de y = -x² + 4", opts: ["Hacia arriba", "Hacia abajo", "Derecha", "Izquierda"], correct: 1, exp: "Coeficiente a es negativo." },
+                { text: "Intersección eje Y de y = x² + x - 2", opts: ["-2", "2", "1", "0"], correct: 0, exp: "Valor de c = -2." }
+            ],
+            
+            'm2_fun_2': [ // Inversa
+                { text: "Inversa de f(x) = 2x + 1", opts: ["(x-1)/2", "x/2 - 1", "2x - 1", "x+1"], correct: 0, exp: "y=2x+1 -> x=(y-1)/2." },
+                { text: "Si f(x)=x³, su inversa es:", opts: ["Raíz cúbica de x", "x⁻³", "3x", "1/x"], correct: 0, exp: "La función inversa de la potencia cúbica es la raíz cúbica." },
+                { text: "Para que tenga inversa, f debe ser:", opts: ["Continua", "Biyeutiva", "Positiva", "Lineal"], correct: 1, exp: "Condición necesaria." },
+                { text: "(f⁻¹ o f)(x) siempre es:", opts: ["x", "1", "0", "f(x)"], correct: 0, exp: "Definición de función inversa." }
+            ],
+            
+            'm2_alg_2': [ // Inecuaciones
+                { text: "Solución de -2x > 6", opts: ["x > -3", "x < -3", "x > 3", "x < 3"], correct: 1, exp: "Dividir por -2 invierte el signo." },
+                { text: "Conjunto solución de x² < 4", opts: ["x < 2", "x > -2", "-2 < x < 2", "x > 2"], correct: 2, exp: "x debe estar entre -2 y 2." },
+                { text: "Intervalo de 2x + 1 >= 5", opts: ["[2, ∞)", "(2, ∞)", "(-∞, 2]", "[4, ∞)"], correct: 0, exp: "2x >= 4 -> x >= 2." },
+                { text: "Si a < b y c < 0, entonces ac ? bc", opts: ["<", ">", "=", "<="], correct: 1, exp: "Multiplicar por negativo invierte desigualdad." }
+            ],
+            
+            'm2_geo_1': [ // Homotecia
+                { text: "Si k = -1, la figura resultante es:", opts: ["Igual", "Rotada 180°", "Más pequeña", "Más grande"], correct: 1, exp: "Homotecia inversa isométrica (simetría central)." },
+                { text: "Si el área se cuadruplica, la razón k es:", opts: ["2", "4", "8", "16"], correct: 0, exp: "La razón de áreas es k². Si k²=4, entonces k=2." },
+                { text: "El centro de homotecia es:", opts: ["Un punto fijo", "El centro de la figura", "Un eje", "Variable"], correct: 0, exp: "Punto desde donde se proyectan las líneas." },
+                { text: "Si k = 0.5, la figura se:", opts: ["Amplía", "Reduce", "Invierte", "Mantiene"], correct: 1, exp: "k entre 0 y 1 reduce." }
+            ],
+            
+            'm2_geo_2': [ // Semejanza
+                { text: "Razón de áreas de triángulos semejantes con razón k", opts: ["k", "2k", "k²", "√k"], correct: 2, exp: "La razón de áreas es el cuadrado de la razón de semejanza." },
+                { text: "Teorema de Thales aplica en:", opts: ["Líneas paralelas", "Ángulos rectos", "Círculos", "Solo triángulos"], correct: 0, exp: "Proporcionalidad entre segmentos cortados por paralelas." },
+                { text: "Criterio AA en triángulos:", opts: ["Lados iguales", "2 Ángulos iguales", "Área igual", "Perímetro igual"], correct: 1, exp: "Ángulo-Ángulo asegura semejanza." },
+                { text: "Si dos triángulos son congruentes, entonces:", opts: ["Son semejantes (k=1)", "Tienen distinta área", "No son semejantes", "K=2"], correct: 0, exp: "Congruencia es un caso particular de semejanza." }
+            ],
+            
+            'm2_geo_3': [ // Vectores R3
+                { text: "u=(1,2,3), v=(2,0,-1). u+v =", opts: ["(3,2,2)", "(3,2,4)", "(1,-2,-4)", "(2,0,-3)"], correct: 0, exp: "(1+2, 2+0, 3-1)." },
+                { text: "Módulo de v=(1,2,2)", opts: ["3", "5", "√5", "9"], correct: 0, exp: "√(1²+2²+2²) = √9 = 3." },
+                { text: "Punto medio entre (0,0,0) y (2,4,6)", opts: ["(1,2,3)", "(2,4,6)", "(1,1,1)", "(0.5, 1, 1.5)"], correct: 0, exp: "Promedio de coordenadas." },
+                { text: "Vector opuesto de (1, -5, 2)", opts: ["(-1, 5, -2)", "(1, 5, 2)", "(-1, -5, -2)", "(0,0,0)"], correct: 0, exp: "Multiplicar por -1." }
+            ],
+            
+            'm2_geo_4': [ // Analítica
+                { text: "Distancia entre (1,1) y (4,5)", opts: ["3", "4", "5", "6"], correct: 2, exp: "Triángulo 3-4-5." },
+                { text: "Punto medio entre (2,4) y (6,8)", opts: ["(4,6)", "(3,5)", "(8,12)", "(4,4)"], correct: 0, exp: "((2+6)/2, (4+8)/2) = (4,6)." },
+                { text: "Ecuación de recta pendiente 2 y n=1", opts: ["y=2x+1", "y=x+2", "y=2x-1", "y=0.5x+1"], correct: 0, exp: "y = mx + n." },
+                { text: "Rectas perpendiculares, producto de pendientes:", opts: ["1", "-1", "0", "Indefinido"], correct: 1, exp: "m1 • m2 = -1." }
+            ],
+            
+            'm2_dat_1': [ // Dispersión
+                { text: "¿Qué medida indica variabilidad?", opts: ["Media", "Moda", "Desviación estándar", "Mediana"], correct: 2, exp: "Mide dispersión respecto al promedio." },
+                { text: "Si la varianza es 9, la desviación estándar es:", opts: ["81", "3", "4.5", "18"], correct: 1, exp: "Raíz cuadrada de la varianza: √9 = 3." },
+                { text: "Si a todos los datos sumo 5, la desviación estándar:", opts: ["Aumenta 5", "Disminuye 5", "Se mantiene", "Se multiplica"], correct: 2, exp: "La dispersión no cambia al trasladar datos." },
+                { text: "Rango de {1, 10, 20}", opts: ["19", "20", "10", "9"], correct: 0, exp: "20 - 1 = 19." }
+            ],
+            
+            'm2_dat_2': [ // Combinatoria
+                { text: "Ordenar 3 libros distintos en repisa", opts: ["3", "6", "9", "1"], correct: 1, exp: "3! = 3x2x1 = 6." },
+                { text: "¿Cuántos grupos de 2 se forman con 4 personas?", opts: ["6", "12", "4", "8"], correct: 0, exp: "Combinación C(4,2) = 4!/(2!2!) = 6." },
+                { text: "Permutación de palabra 'SOL'", opts: ["3", "6", "9", "1"], correct: 1, exp: "3! = 6." },
+                { text: "¿Importa el orden en una Combinación?", opts: ["Sí", "No", "A veces", "Siempre"], correct: 1, exp: "En combinación NO importa, en variación SÍ." }
+            ],
+            
+            'm2_dat_3': [ // Condicional
+                { text: "P(A|B) es:", opts: ["P(A∩B)/P(B)", "P(A∩B)", "P(A)/P(B)", "P(B)/P(A)"], correct: 0, exp: "Definición de probabilidad condicional." },
+                { text: "Si A y B son independientes, P(A∩B) =", opts: ["P(A)+P(B)", "P(A)•P(B)", "0", "1"], correct: 1, exp: "Regla de independencia." },
+                { text: "Probabilidad total suma:", opts: ["0", "0.5", "1", "100"], correct: 2, exp: "Espacio muestral completo." },
+                { text: "Si sacas una bola sin reposición, el espacio muestral:", opts: ["Disminuye", "Aumenta", "Igual", "Se duplica"], correct: 0, exp: "Quedan menos elementos." }
+            ],
+            
+            'm2_final': [ // Ensayo Final M2
+                { text: "Logaritmo de un número negativo...", opts: ["Es negativo", "Es cero", "No existe en R", "Es positivo"], correct: 2, exp: "Argumento debe ser > 0." },
+                { text: "Si f(x)=x² y g(x)=x+1, (f o g)(2) es:", opts: ["5", "9", "6", "8"], correct: 1, exp: "g(2)=3 -> f(3)=3²=9." },
+                { text: "Probabilidad de sacar 2 caras en 3 monedas:", opts: ["3/8", "1/2", "1/4", "1/8"], correct: 0, exp: "Casos: CCA, CAC, ACC. Total 8. Prob: 3/8." },
+                { text: "Valor de k para que x² + kx + 9 = 0 tenga una solución:", opts: ["6", "3", "0", "9"], correct: 0, exp: "Discriminante=0. k²-36=0 -> k=6 o -6." },
+                { text: "Si a > b > 0, entonces:", opts: ["1/a < 1/b", "1/a > 1/b", "-a > -b", "a² < b²"], correct: 0, exp: "Invertir números positivos invierte la desigualdad." }
+            ],
+            
+            // Fallback Mixed
+            'mixed': [ 
+                { text: "Un hotel tiene 200 habitaciones. Reservaron 140. ¿Qué % está disponible?", opts: ["30%", "40%", "70%", "60%"], correct: 0, exp: "Disponibles: 200 - 140 = 60.<br>Porcentaje: (60/200)*100% = 30%." },
+                { text: "log₃(0,1 periódico) es igual a:", opts: ["-1", "-2", "2", "1/2"], correct: 1, exp: "0,1 periódico = 1/9.<br>log₃(1/9) = log₃(3⁻²) = -2." }
+            ]
+        };
+
+        const RANKING_DATA = [{ name: "Carolina Gómez", xp: 1800, avatar: "https://img.icons8.com/color/48/user-female-circle.png" }, { name: "Vicente Arce", xp: 1650, avatar: "https://img.icons8.com/color/48/user-male-circle.png" }, { name: "Tú", me: true, xp: 1450, avatar: "https://img.icons8.com/3d-fluency/94/owl.png" }, { name: "Labubu Pérez", xp: 1200, avatar: "https://img.icons8.com/color/48/circled-user-female-skin-type-7.png" }];
+
+        // === NAVIGATION SYSTEM ===
+        function navTo(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`screen-${screenId}`);
+            if(target) target.classList.add('active');
+            const nav = document.getElementById('bottom-nav');
+            if(nav) {
+                if(['onboarding', 'quiz', 'setup', 'login', 'loading'].includes(screenId)) nav.classList.add('hidden');
+                else nav.classList.remove('hidden');
+            }
+            updateUI(screenId);
+        }
+
+        function updateUI(screenId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.target === screenId) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            // Global updates
+            if(document.getElementById('coins-display')) document.getElementById('coins-display').innerText = state.coins;
+            if(document.getElementById('shop-coins')) document.getElementById('shop-coins').innerText = state.coins;
+            if(document.getElementById('streak-display')) document.getElementById('streak-display').innerText = state.streak;
+            if(document.getElementById('hearts-display')) document.getElementById('hearts-display').innerText = state.hearts;
+            if(document.getElementById('mod-label')) document.getElementById('mod-label').innerText = state.mod;
+            if(document.getElementById('home-username')) document.getElementById('home-username').innerText = state.name;
+            if(document.getElementById('profile-name-display')) document.getElementById('profile-name-display').innerText = state.name;
+            
+            // Visual Module Indicator Color
+            const modDot = document.getElementById('mod-indicator-dot');
+            const modLabel = document.getElementById('mod-label');
+            const pathHeader = document.getElementById('path-header');
+            const unitTitle = document.getElementById('unit-title');
+            const unitSubtitle = document.getElementById('unit-subtitle');
+
+            if(state.mod === 'M1') {
+                if(modDot) modDot.className = "w-2 h-2 rounded-full bg-primary";
+                if(modLabel) modLabel.className = "font-black text-gray-700 text-xs";
+                if(pathHeader) pathHeader.className = "bg-primary text-white p-4 rounded-xl mb-8 shadow-b-4 shadow-primary-dark flex justify-between items-center sticky top-0 z-10";
+                if(unitTitle) unitTitle.innerText = "Ruta M1";
+                if(unitSubtitle) unitSubtitle.innerText = "Competencia Matemática 1";
+            } else {
+                if(modDot) modDot.className = "w-2 h-2 rounded-full bg-secondary";
+                if(modLabel) modLabel.className = "font-black text-secondary-dark text-xs";
+                if(pathHeader) pathHeader.className = "bg-secondary text-white p-4 rounded-xl mb-8 shadow-b-4 shadow-secondary-dark flex justify-between items-center sticky top-0 z-10";
+                if(unitTitle) unitTitle.innerText = "Ruta M2";
+                if(unitSubtitle) unitSubtitle.innerText = "Competencia Matemática 2";
+            }
+
+            // Screen Specifics
+            if(screenId === 'home') renderPath();
+            if(screenId === 'ranking') renderRanking();
+            if(screenId === 'profile') { renderStatsChart(); switchProfileTab('stats'); }
+        }
+
+        // === SETUP LOGIC ===
+        function checkNameInput(input) {
+            const btn = document.getElementById('setup-next-btn');
+            if(input.value.length > 0) { state.name = input.value; btn.disabled = false; btn.classList.remove('bg-gray-200','text-gray-400','border-gray-300','cursor-not-allowed'); btn.classList.add('bg-primary','text-white','border-primary-dark','shadow-b-4','cursor-pointer'); } 
+            else { btn.disabled = true; btn.classList.add('bg-gray-200','text-gray-400','border-gray-300','cursor-not-allowed'); btn.classList.remove('bg-primary','text-white','border-primary-dark','shadow-b-4','cursor-pointer'); }
+        }
+        function nextSetupStep() {
+            if (state.setupStep < 5) {
+                document.getElementById(`setup-step-${state.setupStep}`).classList.add('hidden'); state.setupStep++; document.getElementById(`setup-step-${state.setupStep}`).classList.remove('hidden');
+                const pct = (state.setupStep / 5) * 100; document.getElementById('setup-progress').style.width = `${pct}%`; document.getElementById('step-indicator').innerText = `${state.setupStep}/5`;
+                const btn = document.getElementById('setup-next-btn'); if(state.setupStep === 5) btn.innerText = "FINALIZAR CONFIGURACIÓN";
+            } else finishSetup();
+        }
+        function prevSetupStep() {
+            if (state.setupStep > 1) {
+                document.getElementById(`setup-step-${state.setupStep}`).classList.add('hidden'); state.setupStep--; document.getElementById(`setup-step-${state.setupStep}`).classList.remove('hidden');
+                const pct = (state.setupStep / 5) * 100; document.getElementById('setup-progress').style.width = `${pct}%`; document.getElementById('step-indicator').innerText = `${state.setupStep}/5`;
+                document.getElementById('setup-next-btn').innerText = "CONTINUAR";
+            } else navTo('onboarding');
+        }
+        function selectSetupMod(mod) { state.mod = mod; const m1 = document.getElementById('btn-setup-m1'); const m2 = document.getElementById('btn-setup-m2'); if(mod === 'M1') { m1.className = "setup-mod-btn p-4 rounded-2xl border-2 border-primary bg-green-50 text-primary-dark ring-2 ring-primary ring-opacity-50 transition cursor-pointer"; m2.className = "setup-mod-btn p-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition cursor-pointer"; } else { m2.className = "setup-mod-btn p-4 rounded-2xl border-2 border-secondary bg-purple-50 text-purple-700 ring-2 ring-secondary ring-opacity-50 transition cursor-pointer"; m1.className = "setup-mod-btn p-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition cursor-pointer"; } }
+        function selectLevel(btn) { document.querySelectorAll('.level-btn').forEach(b => { b.classList.remove('border-primary','bg-green-50','ring-2','ring-primary','ring-opacity-20'); b.classList.add('border-gray-200'); }); btn.classList.remove('border-gray-200'); btn.classList.add('border-primary','bg-green-50','ring-2','ring-primary','ring-opacity-20'); }
+        function selectTime(btn) { document.querySelectorAll('.time-btn').forEach(b => { b.className = "time-btn w-full p-4 rounded-2xl border-2 border-gray-200 font-bold text-gray-500 hover:border-primary hover:bg-green-50 hover:text-primary transition text-left flex items-center cursor-pointer"; b.querySelector('.rounded-full').className = "w-6 h-6 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center"; b.querySelector('.dot').classList.add('hidden'); b.querySelector('.text-xs').className = "text-xs bg-gray-100 px-2 py-1 rounded text-gray-400"; }); btn.className = "time-btn w-full p-4 rounded-2xl border-2 border-primary bg-green-50 text-primary font-bold transition text-left flex items-center cursor-pointer"; btn.querySelector('.rounded-full').className = "w-6 h-6 rounded-full border-2 border-primary mr-3 flex items-center justify-center"; btn.querySelector('.dot').classList.remove('hidden'); btn.querySelector('.text-xs').className = "text-xs bg-primary-light text-primary-dark px-2 py-1 rounded"; }
+        function selectReason(btn) { document.querySelectorAll('.reason-btn').forEach(b => { b.classList.remove('border-secondary','bg-purple-50'); b.classList.add('border-gray-200'); }); btn.classList.remove('border-gray-200'); btn.classList.add('border-secondary','bg-purple-50'); }
+        function updateGoal(v) { state.goal = v; document.getElementById('goal-display').innerText = v; }
+        function finishSetup() { document.getElementById('screen-setup').classList.remove('active'); navTo('loading'); const bar = document.getElementById('loading-bar'); const txt = document.getElementById('loading-text'); void bar.offsetWidth; bar.style.width = '100%'; const steps = ["Calibrando dificultad...", "Analizando vectores...", "Construyendo camino...", "¡Listo!"]; let step = 0; const i = setInterval(() => { if(step < steps.length) { txt.innerText = steps[step]; step++; } else { clearInterval(i); confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); navTo('home'); } }, 800); }
+
+        // === CORE & LOGIC ===
+        function toggleModule() { state.mod = state.mod === 'M1' ? 'M2' : 'M1'; updateUI('home'); }
+        
+        function renderPath() {
+            const container = document.getElementById('units-container');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            // SELECT NODES BASED ON MODULE
+            const currentNodes = state.mod === 'M1' ? NODES_M1 : NODES_M2;
+            const theme = state.mod === 'M1' ? CONFIG.M1 : CONFIG.M2;
+
+            currentNodes.forEach((node, idx) => {
+                const offset = idx % 2 === 0 ? '0' : (idx % 4 === 1 ? '40px' : '-40px');
+                
+                let icon = 'fa-star'; 
+                if(node.type === 'chest') icon = 'fa-gift'; 
+                if(node.type === 'trophy') icon = 'fa-trophy'; 
+                if(node.type === 'lesson') icon = 'fa-book';
+                
+                const isLocked = node.locked;
+                const bg = isLocked ? '#E5E7EB' : theme.color;
+                const border = isLocked ? '#D1D5DB' : theme.border;
+                const opacity = isLocked ? 'opacity-70 grayscale' : '';
+                
+                let starsHTML = '';
+                if(!isLocked && node.type !== 'chest') {
+                    starsHTML = `<div class="absolute -top-5 flex space-x-1 bg-white/80 px-2 py-1 rounded-full shadow-sm z-20">${[1,2,3].map(i => `<i class="fas fa-star text-[10px] ${i <= node.stars ? 'text-yellow-400' : 'text-gray-200'}"></i>`).join('')}</div>`;
+                }
+                
+                // Pass Node ID to startQuiz
+                const clickHandler = !isLocked ? `startQuiz('${node.id}')` : '';
+
+                container.innerHTML += `
+                    <div class="relative flex flex-col justify-center items-center w-full path-node z-10" style="transform: translateX(${offset})">
+                        ${starsHTML}
+                        <button onclick="${clickHandler}" class="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white shadow-lg btn-3d border-b-[6px] ${opacity} transition z-10 relative cursor-pointer"
+                            style="background-color: ${bg}; border-color: ${border}">
+                            <i class="fas ${icon}"></i>
+                             <div class="absolute top-2 left-3 w-4 h-4 bg-white opacity-20 rounded-full"></div>
+                        </button>
+                        <div class="mt-3 font-black text-gray-500 text-xs bg-white/80 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-sm border border-white tracking-wide text-center w-max">${node.title}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderRanking() { const list = document.getElementById('leaderboard-list'); if(!list) return; list.innerHTML = ''; [...RANKING_DATA].sort((a,b)=>b.xp-a.xp).forEach((u,i) => { const displayName = u.me ? state.name : u.name; list.innerHTML += `<div class="flex items-center p-3 rounded-2xl border-2 ${u.me ? 'bg-green-50 border-primary shadow-md' : 'bg-white border-gray-100'} mb-2"><div class="font-black text-lg w-8 text-center ${i===0?'text-yellow-500':'text-gray-600'}">${i+1}</div><img src="${u.avatar}" class="w-10 h-10 rounded-full mr-3 border-2 border-white shadow-sm"><div class="flex-grow font-bold text-gray-700">${displayName}</div><div class="font-black text-gray-600">${u.xp} XP</div></div>`; }); }
+        function buyItem(t,c) { if(state.coins>=c) { if(t==='hearts' && state.hearts===state.maxHearts) return alert("Lleno"); state.coins-=c; if(t==='hearts') state.hearts=state.maxHearts; updateUI('shop'); confetti({particleCount:50,origin:{y:0.5}}); } else alert("No monedas"); }
+        
+        // === QUIZ ENGINE ===
+        function startQuiz(nodeId) {
+            if(state.hearts<=0) { document.getElementById('overlay-lose').classList.remove('hidden'); return; }
+            
+            // LOAD QUESTIONS FROM DB
+            if(nodeId && QUESTIONS_DB[nodeId]) {
+                state.currentQuizSet = QUESTIONS_DB[nodeId];
+            } else {
+                state.currentQuizSet = QUESTIONS_DB['mixed']; // Fallback
+            }
+            
+            state.qIndex=0;
+            renderQuestion();
+            navTo('quiz');
+        }
+
+        function renderQuestion() {
+            const q = state.currentQuizSet[state.qIndex];
+            if (!q) return; // Guard
+
+            document.getElementById('q-text').innerHTML = q.text;
+            document.getElementById('quiz-hearts').innerText = state.hearts;
+            document.getElementById('quiz-progress-bar').style.width = `${((state.qIndex) / state.currentQuizSet.length) * 100}%`;
+            
+            const opts = document.getElementById('q-options');
+            opts.innerHTML='';
+            
+            document.getElementById('feedback-sheet').classList.remove('translate-y-0');
+            document.getElementById('feedback-sheet').classList.add('translate-y-full');
+            document.getElementById('check-area').classList.remove('hidden');
+            
+            const bc = document.getElementById('btn-check');
+            bc.disabled=true;
+            bc.className="btn-3d w-full bg-gray-200 text-gray-400 font-black uppercase py-4 rounded-2xl border-b-4 border-gray-300 cursor-not-allowed";
+            
+            q.opts.forEach((o,i) => {
+                const b = document.createElement('button');
+                b.className="w-full p-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-600 font-bold text-lg hover:bg-gray-50 active:scale-[0.98] transition text-left relative cursor-pointer";
+                b.innerHTML=`<div class="flex items-center"><span class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center mr-4 text-sm text-gray-400 font-black">${String.fromCharCode(65+i)}</span>${o}</div>`;
+                b.onclick=()=>selectOpt(i,b);
+                opts.appendChild(b);
+            });
+        }
+
+        function selectOpt(i,btn) {
+            state.selected=i;
+            document.querySelectorAll('#q-options button').forEach(b=>{
+                b.className="w-full p-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-600 font-bold text-lg transition text-left cursor-pointer";
+                b.querySelector('span').className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center mr-4 text-sm text-gray-400 font-black";
+            });
+            btn.className="w-full p-4 rounded-2xl border-2 border-info bg-blue-50 text-info-dark font-bold text-lg transition text-left cursor-pointer";
+            btn.querySelector('span').className="w-8 h-8 rounded-lg border border-info bg-info text-white flex items-center justify-center mr-4 text-sm font-black";
+            const bc=document.getElementById('btn-check');
+            bc.disabled=false;
+            bc.className="btn-3d w-full bg-primary text-white font-black uppercase py-4 rounded-2xl border-b-4 border-primary-dark shadow-b-4 cursor-pointer";
+        }
+
+        function checkAnswer() {
+            const q = state.currentQuizSet[state.qIndex];
+            const isC = state.selected === q.correct;
+            
+            const s=document.getElementById('feedback-sheet');
+            const ic=document.getElementById('fb-icon-container');
+            const t=document.getElementById('fb-title');
+            const m=document.getElementById('fb-msg');
+            const b=document.getElementById('fb-btn');
+            
+            document.getElementById('check-area').classList.add('hidden');
+            
+            if(isC) {
+                confetti({particleCount:100,spread:70,origin:{y:0.8}});
+                s.className="absolute bottom-0 w-full transform transition-transform duration-300 z-50 border-t-2 bg-[#d7ffb8] border-[#b8f28b] translate-y-0";
+                t.innerText="¡Correcto!";
+                t.className="font-black text-2xl text-primary-dark";
+                ic.innerHTML="<i class='fas fa-check'></i>";
+                ic.className="w-14 h-14 rounded-full bg-white flex items-center justify-center mr-4 shadow-sm text-3xl text-primary";
+                m.innerHTML="";
+                b.className="btn-3d w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-white shadow-lg bg-primary border-b-4 border-primary-dark cursor-pointer";
+            } else {
+                state.hearts--;
+                document.getElementById('quiz-hearts').innerText=state.hearts;
+                document.getElementById('quiz-content').classList.add('animate-shake');
+                setTimeout(()=>document.getElementById('quiz-content').classList.remove('animate-shake'),500);
+                s.className="absolute bottom-0 w-full transform transition-transform duration-300 z-50 border-t-2 bg-[#ffdfe0] border-[#ffb5b6] translate-y-0";
+                t.innerText="Incorrecto";
+                t.className="font-black text-2xl text-danger";
+                ic.innerHTML="<i class='fas fa-times'></i>";
+                ic.className="w-14 h-14 rounded-full bg-white flex items-center justify-center mr-4 shadow-sm text-3xl text-danger";
+                m.innerHTML=`Solución: ${q.exp}`;
+                b.className="btn-3d w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-white shadow-lg bg-danger border-b-4 border-danger-dark cursor-pointer";
+            }
+        }
+
+        function nextQuestion() {
+            if(state.qIndex < state.currentQuizSet.length - 1) {
+                if(state.hearts <= 0) {
+                     navTo('quiz');
+                     document.getElementById('overlay-lose').classList.remove('hidden');
+                     return;
+                }
+                state.qIndex++;
+                renderQuestion();
+            } else {
+                document.getElementById('overlay-win').classList.remove('hidden');
+                confetti({particleCount:200,spread:120,origin:{y:0.6}});
+            }
+        }
+
+        function closeWinOverlay() { document.getElementById('overlay-win').classList.add('hidden'); state.xp+=30; state.coins+=15; navTo('home'); }
+        function exitQuiz() { if(confirm("Salir?")) navTo('home'); }
+
+        // === PROFILE TAB LOGIC ===
+        let radarChartInstance = null;
+        function switchProfileTab(t) { const s=document.getElementById('view-stats'); const z=document.getElementById('view-zen'); if(t==='stats') { s.classList.remove('hidden'); z.classList.add('hidden'); renderStatsChart(); } else { s.classList.add('hidden'); z.classList.remove('hidden'); } }
+        function renderStatsChart() { const ctx = document.getElementById('competenceChart'); if(!ctx) return; if(radarChartInstance) radarChartInstance.destroy(); radarChartInstance = new Chart(ctx, { type: 'radar', data: { labels: Object.keys(state.stats), datasets: [{ label: 'Nivel', data: Object.values(state.stats).map(v=>v*100), fill: true, backgroundColor: 'rgba(76, 201, 0, 0.2)', borderColor: '#4CC900', pointBackgroundColor: '#fff', pointBorderColor: '#4CC900' }] }, options: { elements: { line: { borderWidth: 3 } }, scales: { r: { angleLines: { display: true }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }, plugins: { legend: { display: false } } } }); }
+        let isBreathing = false; let breathInterval;
+        function toggleBreathing() { const btn = document.getElementById('zen-btn'); const text = document.getElementById('zen-text'); if (isBreathing) { clearInterval(breathInterval); isBreathing = false; btn.innerText = 'INICIAR'; text.innerText = "Inhala..."; } else { isBreathing = true; btn.innerText = 'DETENER'; let cycle = 0; const breathCycle = () => { if (cycle === 0) { text.innerText = "Inhala... (4s)"; cycle = 1; setTimeout(breathCycle, 4000); } else if (cycle === 1) { text.innerText = "Mantén... (7s)"; cycle = 2; setTimeout(breathCycle, 7000); } else { text.innerText = "Exhala... (8s)"; cycle = 0; setTimeout(breathCycle, 8000); } }; breathCycle(); } }
+        function showMascotMsg() { alert("¡Sigue así! Cada error es una oportunidad de aprender."); }
+
+        // Start
+        navTo('onboarding');
+    </script>
+</body>
+</html>
